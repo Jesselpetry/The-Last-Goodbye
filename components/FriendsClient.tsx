@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createFriend, updateFriend, deleteFriend, getFriendById } from '@/app/actions/admin';
 import { Friend, FriendFormData } from '@/lib/types';
+import { Plus, Trash2, Lock, User, FileText, Image as ImageIcon, Music, Edit, CheckCircle, X } from 'lucide-react';
 
 interface FriendFormProps {
   friend?: Friend | null;
@@ -17,8 +18,10 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
     slug: friend?.slug || '',
     passcode: friend?.passcode || '',
     content: friend?.content || '',
-    image_url: friend?.image_url || '',
+    image_urls: friend?.image_urls || (friend?.image_url ? [friend.image_url] : []),
+    spotify_url: friend?.spotify_url || '',
   });
+  const [newImageUrl, setNewImageUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -52,33 +55,70 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
     setFormData({ ...formData, slug });
   };
 
+  const addImageUrl = () => {
+    if (newImageUrl) {
+        setFormData({
+            ...formData,
+            image_urls: [...(formData.image_urls || []), newImageUrl]
+        });
+        setNewImageUrl('');
+    }
+  };
+
+  const removeImageUrl = (index: number) => {
+    const newUrls = [...(formData.image_urls || [])];
+    newUrls.splice(index, 1);
+    setFormData({ ...formData, image_urls: newUrls });
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold">
-            {isEdit ? '✏️ แก้ไขข้อมูลเพื่อน' : '➕ เพิ่มเพื่อนใหม่'}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            {isEdit ? <Edit className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+            {isEdit ? 'แก้ไขข้อมูลเพื่อน' : 'เพิ่มเพื่อนใหม่'}
           </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-6 h-6" />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">
-              {error}
+            <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm flex items-center gap-2">
+              <span className="font-bold">Error:</span> {error}
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              ชื่อเพื่อน *
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-              required
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                <User className="w-4 h-4" /> ชื่อเพื่อน *
+                </label>
+                <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all"
+                required
+                />
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                <Lock className="w-4 h-4" /> รหัสผ่าน 4 หลัก *
+                </label>
+                <input
+                type="text"
+                value={formData.passcode}
+                onChange={(e) => setFormData({ ...formData, passcode: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all"
+                placeholder="1234"
+                maxLength={4}
+                required
+                />
+            </div>
           </div>
 
           <div>
@@ -90,76 +130,107 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
                 type="text"
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all"
                 placeholder="example: john-doe"
                 required
               />
               <button
                 type="button"
                 onClick={generateSlug}
-                className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200"
+                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors text-sm font-medium"
               >
-                สร้างอัตโนมัติ
+                Auto
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              URL จะเป็น: yourdomain.com/{formData.slug || 'slug'}
+            <p className="text-xs text-gray-500 mt-1 ml-1">
+              URL: yourdomain.com/{formData.slug || 'slug'}
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              รหัสผ่าน 4 หลัก *
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" /> รูปภาพแห่งความทรงจำ
+            </label>
+
+            <div className="space-y-3 mb-3">
+                {formData.image_urls?.map((url, index) => (
+                    <div key={index} className="flex gap-2 items-center group">
+                        <div className="flex-1 flex gap-2 items-center bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
+                            <div className="w-8 h-8 relative rounded overflow-hidden bg-gray-200 flex-shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={url} alt="" className="object-cover w-full h-full" />
+                            </div>
+                            <span className="text-sm text-gray-600 truncate flex-1">{url}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => removeImageUrl(index)}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                        </button>
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex gap-2">
+                <input
+                    type="url"
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addImageUrl())}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all"
+                    placeholder="https://example.com/image.jpg"
+                />
+                <button
+                    type="button"
+                    onClick={addImageUrl}
+                    disabled={!newImageUrl}
+                    className="px-4 py-2 bg-gray-900 text-white rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                >
+                    <Plus className="w-5 h-5" />
+                </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                <Music className="w-4 h-4" /> Spotify Link (Optional)
             </label>
             <input
-              type="text"
-              value={formData.passcode}
-              onChange={(e) => setFormData({ ...formData, passcode: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-              placeholder="1234"
-              maxLength={4}
-              required
+                type="url"
+                value={formData.spotify_url || ''}
+                onChange={(e) => setFormData({ ...formData, spotify_url: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all"
+                placeholder="https://open.spotify.com/track/..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              URL รูปภาพ (ไม่บังคับ)
-            </label>
-            <input
-              type="url"
-              value={formData.image_url || ''}
-              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-              placeholder="https://..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              เนื้อหาจดหมาย
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                <FileText className="w-4 h-4" /> เนื้อหาจดหมาย
             </label>
             <textarea
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent font-mali"
-              rows={10}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent font-mali outline-none transition-all"
+              rows={8}
               placeholder="เขียนจดหมายของคุณที่นี่..."
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 border-t border-gray-100">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 disabled:opacity-50 font-medium transition-colors shadow-lg shadow-gray-200"
             >
               {isLoading ? 'กำลังบันทึก...' : isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มเพื่อน'}
             </button>
@@ -178,6 +249,7 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
+  const createMode = searchParams.get('create');
 
   const [friends, setFriends] = useState(initialFriends);
   const [showForm, setShowForm] = useState(false);
@@ -194,8 +266,12 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
         }
       };
       loadFriend();
+    } else if (createMode) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setEditingFriend(null);
+        setShowForm(true);
     }
-  }, [editId]);
+  }, [editId, createMode]);
 
   const handleSuccess = () => {
     setShowForm(false);
@@ -227,60 +303,71 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">จัดการเพื่อน</h1>
-          <p className="text-gray-600">เพิ่ม แก้ไข หรือลบข้อมูลเพื่อน</p>
+          <h1 className="text-2xl font-bold text-gray-900">จัดการเพื่อน</h1>
+          <p className="text-gray-500">เพิ่ม แก้ไข หรือลบข้อมูลเพื่อน ({friends.length} คน)</p>
         </div>
         <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
+          onClick={() => {
+              setEditingFriend(null);
+              setShowForm(true);
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all shadow-md hover:shadow-lg"
         >
-          ➕ เพิ่มเพื่อนใหม่
+          <Plus className="w-5 h-5" /> เพิ่มเพื่อนใหม่
         </button>
       </div>
 
       {/* Friends Grid */}
       {friends.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-          ยังไม่มีรายชื่อเพื่อน กดปุ่ม &quot;เพิ่มเพื่อนใหม่&quot; เพื่อเริ่มต้น
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center text-gray-500 flex flex-col items-center gap-4">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
+                <User className="w-8 h-8 text-gray-300" />
+            </div>
+            <p>ยังไม่มีรายชื่อเพื่อน กดปุ่ม &quot;เพิ่มเพื่อนใหม่&quot; เพื่อเริ่มต้น</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {friends.map((friend) => (
-            <div key={friend.id} className="bg-white rounded-lg shadow p-6">
+            <div key={friend.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all group">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="font-semibold text-gray-800">{friend.name}</h3>
-                  <code className="text-xs text-gray-500">/{friend.slug}</code>
+                  <h3 className="font-bold text-gray-900 text-lg">{friend.name}</h3>
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                    <span className="bg-gray-50 px-2 py-0.5 rounded border border-gray-100">/{friend.slug}</span>
+                  </div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  friend.is_viewed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                <span className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1 font-medium ${
+                  friend.is_viewed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
                 }`}>
-                  {friend.is_viewed ? '✅ อ่านแล้ว' : '🔒 ยังไม่เปิด'}
+                  {friend.is_viewed ? <CheckCircle className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                  {friend.is_viewed ? 'อ่านแล้ว' : 'ยังไม่เปิด'}
                 </span>
               </div>
 
-              <div className="text-sm text-gray-500 mb-4">
-                รหัสผ่าน: <code className="bg-gray-100 px-2 py-0.5 rounded">{friend.passcode}</code>
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-6 bg-gray-50 p-2 rounded-lg">
+                <Lock className="w-4 h-4 text-gray-400" />
+                <span>Passcode:</span>
+                <code className="font-mono text-gray-900 font-bold">{friend.passcode}</code>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 border-t border-gray-50 pt-4">
                 <button
                   onClick={() => handleEdit(friend)}
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all"
                 >
-                  ✏️ แก้ไข
+                  <Edit className="w-4 h-4" /> แก้ไข
                 </button>
                 {deleteConfirm === friend.id ? (
-                  <div className="flex gap-1">
+                  <div className="flex gap-2 flex-1">
                     <button
                       onClick={() => handleDelete(friend.id)}
-                      className="px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all"
                     >
                       ยืนยัน
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(null)}
-                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                      className="px-3 py-2 text-sm border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50"
                     >
                       ยกเลิก
                     </button>
@@ -288,9 +375,9 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
                 ) : (
                   <button
                     onClick={() => setDeleteConfirm(friend.id)}
-                    className="px-3 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+                    className="px-3 py-2 text-sm border border-red-100 text-red-500 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all"
                   >
-                    🗑️ ลบ
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 )}
               </div>

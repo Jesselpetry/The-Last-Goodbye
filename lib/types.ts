@@ -7,7 +7,9 @@ export interface Friend {
   name: string;
   passcode: string;
   content: string | null;
-  image_url: string | null;
+  image_url?: string | null; // Deprecated, use image_urls
+  image_urls: string[] | null; // New field
+  spotify_url: string | null; // New field
   is_viewed: boolean;
 }
 
@@ -42,7 +44,9 @@ export interface FriendFormData {
   slug: string;
   passcode: string;
   content: string;
-  image_url?: string;
+  image_urls?: string[];
+  spotify_url?: string;
+  image_url?: string; // Deprecated
 }
 
 // Status types for admin dashboard

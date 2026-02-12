@@ -10,7 +10,9 @@ interface FriendPageClientProps {
   slug: string;
   friendName: string;
   friendContent: string;
-  friendImageUrl: string | null;
+  friendImageUrl?: string | null;
+  friendImageUrls?: string[] | null;
+  friendSpotifyUrl?: string | null;
   isAlreadyViewed: boolean;
 }
 
@@ -25,6 +27,8 @@ export default function FriendPageClient({
   friendName,
   friendContent,
   friendImageUrl,
+  friendImageUrls,
+  friendSpotifyUrl,
   isAlreadyViewed,
 }: FriendPageClientProps) {
   const [phase, setPhase] = useState<Phase>('countdown');
@@ -81,6 +85,8 @@ export default function FriendPageClient({
           onSubmit={handlePinSubmit}
           isLoading={isLoading}
           error={error}
+          title={`จดหมายถึง ${friendName}`}
+          description="กรุณาใส่รหัสผ่าน 4 หลัก"
         />
       )}
       
@@ -89,6 +95,8 @@ export default function FriendPageClient({
           name={friendName}
           content={friendContent || 'ยังไม่มีเนื้อหาจดหมาย'}
           imageUrl={friendImageUrl}
+          imageUrls={friendImageUrls}
+          spotifyUrl={friendSpotifyUrl}
         />
       )}
     </div>

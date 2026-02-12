@@ -2,6 +2,37 @@
 
 import { supabase } from '@/lib/supabase';
 import { Friend, FriendFormData, FriendWithStatus, VisitLog, VisitLogWithFriend } from '@/lib/types';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+// Verify Admin PIN
+export async function verifyAdmin(pin: string) {
+  const adminPin = process.env.ADMIN_PIN;
+
+  if (!adminPin) {
+    console.error("ADMIN_PIN not set");
+    return { success: false, error: "System configuration error" };
+  }
+
+  if (pin === adminPin) {
+    const cookieStore = await cookies();
+    cookieStore.set('admin_session', 'authenticated', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 // 1 day,
+    });
+    return { success: true };
+  }
+
+  return { success: false, error: "Invalid PIN" };
+}
+
+// Logout Admin
+export async function logoutAdmin() {
+  const cookieStore = await cookies();
+  cookieStore.delete('admin_session');
+  redirect('/admin/login');
+}
 
 // Get all friends with status
 export async function getAllFriends(): Promise<FriendWithStatus[]> {
@@ -95,7 +126,8 @@ export async function createFriend(data: FriendFormData): Promise<Friend | null>
         slug: data.slug,
         passcode: data.passcode,
         content: data.content,
-        image_url: data.image_url || null,
+        image_urls: data.image_urls || [],
+        spotify_url: data.spotify_url || null,
       })
       .select()
       .single();
@@ -111,9 +143,21 @@ export async function createFriend(data: FriendFormData): Promise<Friend | null>
 // Update a friend
 export async function updateFriend(id: string, data: Partial<FriendFormData>): Promise<Friend | null> {
   try {
+    // Only pick fields that exist in the form and database
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {
+        name: data.name,
+        slug: data.slug,
+        passcode: data.passcode,
+        content: data.content,
+    };
+
+    if (data.image_urls !== undefined) updateData.image_urls = data.image_urls;
+    if (data.spotify_url !== undefined) updateData.spotify_url = data.spotify_url;
+
     const { data: friend, error } = await supabase
       .from('friends')
-      .update(data)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
