@@ -16,7 +16,7 @@ interface FriendPageClientProps {
 
 // Target date: Feb 20, 2026, 21:00 (GMT+7)
 // GMT+7 means 21:00 GMT+7 = 14:00 UTC
-const TARGET_DATE = new Date('2026-02-20T14:00:00Z');
+const TARGET_DATE = new Date('2026-02-12T14:00:00Z');
 
 type Phase = 'countdown' | 'auth' | 'reveal';
 
@@ -68,7 +68,7 @@ export default function FriendPageClient({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen">
       {phase === 'countdown' && (
         <Countdown
           targetDate={TARGET_DATE}
