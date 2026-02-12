@@ -42,6 +42,11 @@ create policy "Admin Upload" on storage.objects for insert using ( bucket_id = '
 alter table friends enable row level security;
 alter table visit_logs enable row level security;
 
+-- ⚠️ SECURITY NOTE: The following policies are PERMISSIVE for development/personal use.
+-- For production deployment, implement proper authentication and restrict these policies
+-- to authenticated admin users only. Consider using Supabase Auth with service role key
+-- for admin operations.
+
 -- Allow public read access to friends table (for fetching by slug)
 create policy "Public read friends by slug" on friends for select using (true);
 

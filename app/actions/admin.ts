@@ -1,7 +1,7 @@
 'use server';
 
 import { supabase } from '@/lib/supabase';
-import { Friend, FriendFormData, FriendWithStatus, VisitLog } from '@/lib/types';
+import { Friend, FriendFormData, FriendWithStatus, VisitLog, VisitLogWithFriend } from '@/lib/types';
 
 // Get all friends with status
 export async function getAllFriends(): Promise<FriendWithStatus[]> {
@@ -63,7 +63,7 @@ export async function getVisitLogs(friendId: string): Promise<VisitLog[]> {
 }
 
 // Get all visit logs with friend info
-export async function getAllVisitLogs() {
+export async function getAllVisitLogs(): Promise<VisitLogWithFriend[]> {
   try {
     const { data: logs, error } = await supabase
       .from('visit_logs')
@@ -78,7 +78,7 @@ export async function getAllVisitLogs() {
       .order('visited_at', { ascending: false });
     
     if (error) throw error;
-    return logs || [];
+    return (logs || []) as VisitLogWithFriend[];
   } catch (error) {
     console.error('Error getting all visit logs:', error);
     return [];

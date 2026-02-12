@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getAllVisitLogs, getAllFriends, getVisitLogs } from '@/app/actions/admin';
+import { VisitLog, VisitLogWithFriend } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,15 +47,14 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   
   const friends = await getAllFriends();
   
-  let logs;
+  let logs: VisitLog[] | VisitLogWithFriend[];
   let selectedFriend = null;
   
   if (friendId) {
     logs = await getVisitLogs(friendId);
     selectedFriend = friends.find(f => f.id === friendId);
   } else {
-    const allLogs = await getAllVisitLogs();
-    logs = allLogs;
+    logs = await getAllVisitLogs();
   }
 
   return (
@@ -154,7 +154,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                     {!friendId && (
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {(log as unknown as { friends: { name: string } }).friends?.name || 'Unknown'}
+                          {(log as VisitLogWithFriend).friends?.name || 'Unknown'}
                         </div>
                       </td>
                     )}

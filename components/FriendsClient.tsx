@@ -36,7 +36,8 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
         await createFriend(formData);
       }
       onSuccess();
-    } catch {
+    } catch (err) {
+      console.error('Error creating/updating friend:', err);
       setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
     } finally {
       setIsLoading(false);

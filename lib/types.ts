@@ -23,6 +23,15 @@ export interface VisitLog {
   os: string | null;
 }
 
+// Visit log with friend relation (from Supabase join)
+export interface VisitLogWithFriend extends VisitLog {
+  friends: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+}
+
 export interface FriendWithLogs extends Friend {
   visit_logs: VisitLog[];
 }

@@ -59,7 +59,8 @@ export default function FriendPageClient({
       } else {
         setError('รหัสผ่านไม่ถูกต้อง');
       }
-    } catch {
+    } catch (err) {
+      console.error('Error verifying passcode:', err);
       setError('เกิดข้อผิดพลาด กรุณาลองใหม่');
     } finally {
       setIsLoading(false);
