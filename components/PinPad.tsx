@@ -31,10 +31,10 @@ export default function PinPad({ onSubmit, isLoading, error }: PinPadProps) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      <h1 className="text-xl md:text-2xl font-light text-gray-600 mb-2 text-center">
+      <h1 className="text-xl md:text-2xl font-regular text-black mb-2 text-center">
         กรุณาใส่รหัสผ่าน
       </h1>
-      <p className="text-sm text-gray-400 mb-8">ใส่รหัส 4 หลักเพื่อเปิดจดหมาย</p>
+      <p className="text-sm text-gray-600 mb-8">ใส่รหัส 4 หลักเพื่อเปิดจดหมาย</p>
       
       {/* Pin Display */}
       <div className="flex gap-3 mb-8">
