@@ -271,7 +271,7 @@ export default function Letter({
             onClick={handleOpen}
             className="cursor-pointer z-10 relative group perspective-1000"
           >
-            <div className="w-[320px] h-[220px] bg-gradient-to-br from-[#F2E8C9] to-[#EBDCB5] border-2 border-[#E6D5A7] rounded-lg shadow-2xl relative flex flex-col items-center justify-center overflow-hidden">
+            <div className="w-[320px] h-[220px] bg-gradient-to-br from-[#F2E8C9] to-[#EBDCB5] border-2 border-[#E6D5A7] rounded-lg shadow-md relative flex flex-col items-center justify-center overflow-hidden">
               <motion.div 
                 className="absolute top-0 left-0 w-full h-0 border-l-[160px] border-r-[160px] border-t-[110px] border-l-transparent border-r-transparent border-t-[#D4C4A0] drop-shadow-lg origin-top z-20"
                 whileHover={{ rotateX: 15, transition: { type: "spring", stiffness: 200, damping: 15 } }}
@@ -318,7 +318,7 @@ export default function Letter({
             className="max-w-4xl mx-auto w-full z-10 relative pb-20 pt-10 md:pt-4"
           >
             {/* Header */}
-            <motion.div variants={childVariants} className="text-center mb-4 mt-8">
+            <motion.div variants={childVariants} className="text-center mb-4 mt-4">
               <motion.h1 
                 className="text-3xl md:text-4xl font-mali text-gray-800 mb-4 font-bold"
                 initial={{ letterSpacing: "0.2em", opacity: 0 }}
