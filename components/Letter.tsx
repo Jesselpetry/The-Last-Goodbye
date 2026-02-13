@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence, useSpring, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ReactConfetti from "react-confetti";
-import { Mail, MailOpen } from "lucide-react";
+import { Mail, MailOpen, Volume2, VolumeX, Music } from "lucide-react"; // เพิ่ม Icon Music สำหรับ Section ใหม่
 
 interface LetterProps {
   name: string;
@@ -27,7 +27,11 @@ export default function Letter({
   const [showConfetti, setShowConfetti] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Enhanced spring physics for smoother animations
+  // --- AUDIO SYSTEM STATES ---
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isMuted, setIsMuted] = useState(false); 
+  const [hasInteracted, setHasInteracted] = useState(false); 
+
   const springConfig = {
     type: "spring" as const,
     stiffness: 100,
@@ -42,7 +46,6 @@ export default function Letter({
     mass: 1
   };
 
-  // Merge legacy imageUrl into imageUrls if needed
   const rawImages =
     imageUrls && imageUrls.length > 0
       ? imageUrls
@@ -84,10 +87,30 @@ export default function Letter({
     return () => clearInterval(interval);
   }, [isOpened, displayImages.length, isMobile]);
 
+  // --- HANDLE OPEN ---
   const handleOpen = () => {
     setIsOpened(true);
     setShowConfetti(true);
+    setHasInteracted(true);
+    
+    if (audioRef.current && !isMuted) {
+      audioRef.current.play().catch(err => console.log("Audio play prevented:", err));
+    }
+
     setTimeout(() => setShowConfetti(false), 6000);
+  };
+
+  // --- HANDLE MUTE TOGGLE ---
+  const toggleMute = () => {
+    if (audioRef.current) {
+      const newMutedState = !isMuted;
+      setIsMuted(newMutedState);
+      audioRef.current.muted = newMutedState;
+      
+      if (!newMutedState && hasInteracted) {
+         audioRef.current.play().catch(e => console.log("Play failed", e));
+      }
+    }
   };
 
   const formatDate = (dateString?: string) => {
@@ -103,154 +126,58 @@ export default function Letter({
     }
   };
 
-  // Enhanced animation variants
   const envelopeVariants = {
-    initial: { 
-      opacity: 0, 
-      y: 50, 
-      scale: 0.8,
-      rotateY: -15
-    },
-    animate: { 
-      opacity: 1, 
-      y: 0, 
-      scale: 1,
-      rotateY: 0,
-      transition: {
-        ...springConfig,
-        duration: 0.8
-      }
-    },
-    exit: { 
-      opacity: 0, 
-      y: -100, 
-      scale: 0.6,
-      rotateY: 15,
-      transition: { 
-        duration: 0.6,
-        ease: "easeInOut"
-      } 
-    },
-    hover: { 
-      scale: 1.08, 
-      rotate: -2,
-      y: -5,
-      transition: {
-        type: "spring",
-        stiffness: 400,
-        damping: 10
-      }
-    },
-    tap: { 
-      scale: 0.95,
-      rotate: 1,
-      transition: {
-        type: "spring",
-        stiffness: 600,
-        damping: 20
-      }
-    }
+    initial: { opacity: 0, y: 50, scale: 0.8, rotateY: -15 },
+    animate: { opacity: 1, y: 0, scale: 1, rotateY: 0, transition: { ...springConfig, duration: 0.8 } },
+    exit: { opacity: 0, y: -100, scale: 0.6, rotateY: 15, transition: { duration: 0.6, ease: "easeInOut" } },
+    hover: { scale: 1.08, rotate: -2, y: -5, transition: { type: "spring", stiffness: 400, damping: 10 } },
+    tap: { scale: 0.95, rotate: 1, transition: { type: "spring", stiffness: 600, damping: 20 } }
   };
 
   const contentVariants = {
-    initial: { 
-      opacity: 0,
-      scale: 0.9,
-      y: 20
-    },
-    animate: { 
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      transition: {
-        duration: 1,
-        ease: "easeOut",
-        staggerChildren: 0.2,
-        delayChildren: 0.1
-      }
-    }
+    initial: { opacity: 0, scale: 0.9, y: 20 },
+    animate: { opacity: 1, scale: 1, y: 0, transition: { duration: 1, ease: "easeOut", staggerChildren: 0.2, delayChildren: 0.1 } }
   };
 
   const childVariants = {
-    initial: { 
-      opacity: 0, 
-      y: 30,
-      scale: 0.95
-    },
-    animate: { 
-      opacity: 1, 
-      y: 0,
-      scale: 1,
-      transition: smoothSpringConfig
-    }
+    initial: { opacity: 0, y: 30, scale: 0.95 },
+    animate: { opacity: 1, y: 0, scale: 1, transition: smoothSpringConfig }
   };
 
   const imageVariants = {
-    initial: { 
-      scale: 0, 
-      opacity: 0, 
-      y: 50,
-      rotate: 0
-    },
-    animate: { 
-      scale: 1, 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 120,
-        damping: 15,
-        mass: 0.8
-      }
-    },
-    hover: {
-      scale: 1.08,
-      y: -12,
-      rotate: 0,
-      zIndex: 50,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 20
-      }
-    }
+    initial: { scale: 0, opacity: 0, y: 50, rotate: 0 },
+    animate: { scale: 1, opacity: 1, y: 0, transition: { type: "spring", stiffness: 120, damping: 15, mass: 0.8 } },
+    hover: { scale: 1.08, y: -12, rotate: 0, zIndex: 50, transition: { type: "spring", stiffness: 300, damping: 20 } }
   };
 
   const mobileImageVariants = {
-    initial: { 
-      opacity: 0, 
-      x: 120, 
-      rotate: 8,
-      scale: 0.9
-    },
-    animate: { 
-      opacity: 1, 
-      x: 0, 
-      rotate: 0,
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 20,
-        mass: 0.9
-      }
-    },
-    exit: { 
-      opacity: 0, 
-      x: -120, 
-      rotate: -8,
-      scale: 0.9,
-      transition: {
-        type: "spring",
-        stiffness: 120,
-        damping: 25,
-        mass: 0.7
-      }
-    }
+    initial: { opacity: 0, x: 120, rotate: 8, scale: 0.9 },
+    animate: { opacity: 1, x: 0, rotate: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 20, mass: 0.9 } },
+    exit: { opacity: 0, x: -120, rotate: -8, scale: 0.9, transition: { type: "spring", stiffness: 120, damping: 25, mass: 0.7 } }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 overflow-hidden relative">
+      
+      {/* --- HIDDEN AUDIO ELEMENT --- */}
+      <audio ref={audioRef} src="/bgm.mp3" loop preload="auto" />
+
+      {/* --- MUTE/UNMUTE BUTTON --- */}
+      <AnimatePresence>
+        {isOpened && (
+          <motion.button
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 }}
+            onClick={toggleMute}
+            className="fixed top-6 right-6 z-50 bg-white/50 hover:bg-white/80 backdrop-blur-md p-3 rounded-full shadow-md text-gray-700 transition-all border border-gray-100"
+            aria-label="Toggle Sound"
+          >
+            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {showConfetti && (
         <ReactConfetti
           recycle={false}
@@ -277,31 +204,16 @@ export default function Letter({
             <div className="w-[320px] h-[220px] bg-gradient-to-br from-[#F2E8C9] to-[#EBDCB5] border-2 border-[#E6D5A7] rounded-lg shadow-2xl relative flex flex-col items-center justify-center overflow-hidden">
               <motion.div 
                 className="absolute top-0 left-0 w-full h-0 border-l-[160px] border-r-[160px] border-t-[110px] border-l-transparent border-r-transparent border-t-[#D4C4A0] drop-shadow-lg origin-top z-20"
-                whileHover={{ 
-                  rotateX: 15,
-                  transition: { type: "spring", stiffness: 200, damping: 15 }
-                }}
+                whileHover={{ rotateX: 15, transition: { type: "spring", stiffness: 200, damping: 15 } }}
               />
-              
               <motion.div 
                 className="absolute top-24 z-30 bg-gradient-to-br from-red-400 to-red-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
-                animate={{ 
-                  rotate: [10, 15, 10],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                whileHover={{
-                  scale: 1.1,
-                  rotate: 0,
-                  transition: { type: "spring", stiffness: 300, damping: 15 }
-                }}
+                animate={{ rotate: [10, 15, 10] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                whileHover={{ scale: 1.1, rotate: 0, transition: { type: "spring", stiffness: 300, damping: 15 } }}
               >
                 <Mail className="w-7 h-7" />
               </motion.div>
-
               <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-transparent via-white to-transparent" />
             </div>
             
@@ -333,13 +245,10 @@ export default function Letter({
             variants={contentVariants}
             initial="initial"
             animate="animate"
-            className="max-w-4xl mx-auto w-full z-10 relative pb-20"
+            className="max-w-4xl mx-auto w-full z-10 relative pb-20 pt-10 md:pt-4"
           >
-            {/* Enhanced Header */}
-            <motion.div
-              variants={childVariants}
-              className="text-center mb-4 mt-8"
-            >
+            {/* Header */}
+            <motion.div variants={childVariants} className="text-center mb-4 mt-8">
               <motion.h1 
                 className="text-3xl md:text-4xl font-mali text-gray-800 mb-4 font-bold"
                 initial={{ letterSpacing: "0.2em", opacity: 0 }}
@@ -356,15 +265,10 @@ export default function Letter({
               />
             </motion.div>
 
-            {/* Enhanced Image Display Section */}
+            {/* Image Display Section */}
             {displayImages.length > 0 && (
-              <motion.div 
-                variants={childVariants}
-                className="mb-4 flex justify-center items-center relative w-full h-[400px] md:h-[450px]"
-              >
-                
+              <motion.div variants={childVariants} className="mb-4 flex justify-center items-center relative w-full h-[400px] md:h-[450px]">
                 {isMobile ? (
-                  /* Enhanced Mobile View - 4:5 aspect ratio */
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={displayImages[currentMobileIndex].id}
@@ -389,29 +293,22 @@ export default function Letter({
                     </motion.div>
                   </AnimatePresence>
                 ) : (
-                  /* Desktop View - 3 Photos Layout with 4:5 aspect ratio */
                   <div className="flex justify-center items-end gap-6 lg:gap-8 w-full max-w-5xl mx-auto px-4">
                     <AnimatePresence>
                       {displayImages.slice(0, 3).map((item, index) => {
-                        // Define positions and rotations for 3-photo layout
                         let position = "";
                         let size = "";
+                        let rotation = 0;
                         
-                        if (index === 0) {
-                          // Left photo - tilted left, smaller
-                          position = "mt-8";
-                          size = "w-48 lg:w-52";
-                        } else if (index === 1) {
-                          // Center photo - straight, larger
-                          position = "mb-0";
-                          size = "w-56 lg:w-64";
+                        if (displayImages.length > 1) {
+                          if (index === 0) { position = "mt-8"; size = "w-48 lg:w-52"; rotation = -12; } 
+                          else if (index === 1) { position = "mb-0"; size = "w-56 lg:w-64"; rotation = 0; } 
+                          else { position = "mt-8"; size = "w-48 lg:w-52"; rotation = 12; }
                         } else {
-                          // Right photo - tilted right, smaller
-                          position = "mt-8";
-                          size = "w-48 lg:w-52";
+                          position = "mb-0"; size = "w-56 lg:w-64"; rotation = 0;
                         }
 
-                        const zIndex = index === 1 ? 30 : 20; // Center photo on top
+                        const zIndex = index === 1 ? 30 : 20;
 
                         return (
                           <motion.div
@@ -419,29 +316,9 @@ export default function Letter({
                             key={item.id}
                             variants={imageVariants}
                             initial="initial"
-                            animate={{
-                              ...imageVariants.animate,
-                              rotate: index === 0 ? -12 : index === 2 ? 12 : 0
-                            }}
-                            whileHover={{
-                              scale: 1.08,
-                              y: -12,
-                              rotate: 0, // Straighten on hover
-                              zIndex: 50,
-                              transition: {
-                                type: "spring",
-                                stiffness: 300,
-                                damping: 20
-                              }
-                            }}
-                            transition={{
-                              layout: { 
-                                type: "spring", 
-                                stiffness: 200, 
-                                damping: 20,
-                                mass: 0.8
-                              },
-                            }}
+                            animate={{ ...imageVariants.animate, rotate: rotation }}
+                            whileHover={{ scale: 1.08, y: -12, rotate: 0, zIndex: 50, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+                            transition={{ layout: { type: "spring", stiffness: 200, damping: 20, mass: 0.8 } }}
                             className={`relative cursor-pointer ${position}`}
                             style={{ zIndex }}
                           >
@@ -461,8 +338,6 @@ export default function Letter({
                         );
                       })}
                     </AnimatePresence>
-
-                    {/* Show remaining images indicator if more than 3 */}
                     {displayImages.length > 3 && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
@@ -478,14 +353,10 @@ export default function Letter({
               </motion.div>
             )}
 
-            {/* Enhanced Letter Content */}
+            {/* Letter Content */}
             <motion.div
               variants={childVariants}
-              className="bg-white/95 backdrop-blur-sm rounded-xl p-6 md:p-10 shadow-xl border border-gray-100 relative mt-4"
-              whileHover={{ 
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
-                transition: { duration: 0.3 }
-              }}
+              className="bg-white/95 backdrop-blur-sm rounded-xl p-6 md:p-10 shadow-md border border-gray-100 relative mt-4"
             >
               <motion.div 
                 className="font-mali text-lg md:text-xl leading-loose text-gray-700 whitespace-pre-wrap" 
@@ -498,49 +369,60 @@ export default function Letter({
               </motion.div>
 
               <motion.div 
-                className="mt-12 pt-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-end gap-6"
+                className="mt-12 pt-6 border-t border-gray-200 flex flex-col items-end"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8, ...smoothSpringConfig }}
               >
-                <div className="w-full md:w-1/2 order-2 md:order-1">
-                  {spotifyUrl && (
-                    <motion.div 
-                      className="w-full"
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 1, ...smoothSpringConfig }}
-                    >
-                      <iframe
-                        style={{ borderRadius: "12px" }}
-                        src={spotifyUrl.replace("open.spotify.com", "open.spotify.com/embed")}
-                        width="100%"
-                        height="80"
-                        frameBorder="0"
-                        allowFullScreen
-                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                        loading="lazy"
-                      ></iframe>
-                    </motion.div>
-                  )}
-                </div>
-
+                {/* เอา Spotify ออกจากตรงนี้ เหลือแค่ชื่อกับวันที่ */}
                 <motion.div 
-                  className="w-full md:w-auto text-right order-1 md:order-2 shrink-0"
+                  className="text-right"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 1, ...smoothSpringConfig }}
                 >
-                  <div className="flex flex-col items-end">
-                    <p className="font-mali text-xl font-bold text-gray-800">จาก เจส</p>
-                    <p className="font-mali text-sm text-gray-500 mb-2">(ฉัททัณฑ์ เพททริ)</p>
-                    {timestamp && <p className="font-mali text-xs text-gray-400">เขียนเมื่อ: {formatDate(timestamp)}</p>}
-                  </div>
+                  <p className="font-mali text-xl font-bold text-gray-800">จาก เจส</p>
+                  <p className="font-mali text-sm text-gray-500 mb-2">(ฉัททัณฑ์ เพททริ)</p>
+                  {timestamp && <p className="font-mali text-xs text-gray-400">เขียนเมื่อ: {formatDate(timestamp)}</p>}
                 </motion.div>
               </motion.div>
             </motion.div>
 
-            {/* Enhanced Footer */}
+            {/* --- NEW SECTION: BOARD (For Spotify and future additions) --- */}
+            {spotifyUrl && (
+              <motion.div
+                variants={childVariants}
+                className="mt-8 bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-md border border-gray-100"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2, ...smoothSpringConfig }}
+              >
+                <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-3">
+                  <Music className="w-5 h-5 text-gray-500" />
+                  <h3 className="font-mali text-lg font-semibold text-gray-700">เพลงนี้ให้ {name}</h3>
+                </div>
+                
+                <motion.div 
+                  className="w-full"
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 1.4, ...smoothSpringConfig }}
+                >
+                  <iframe
+                    style={{ borderRadius: "12px" }}
+                    src={spotifyUrl.replace("open.spotify.com", "open.spotify.com/embed")}
+                    width="100%"
+                    height="80"
+                    frameBorder="0"
+                    allowFullScreen
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                  ></iframe>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* Footer */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
