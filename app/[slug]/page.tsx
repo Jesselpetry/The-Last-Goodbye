@@ -36,6 +36,8 @@ export default async function FriendPage({ params }: PageProps) {
       friendImageUrls={friend.image_urls}
       friendSpotifyUrl={friend.spotify_url}
       isAlreadyViewed={friend.is_viewed}
+      unlockDate={friend.unlock_date}
+      timestamp={friend.updated_at || friend.created_at}
     />
   );
 }

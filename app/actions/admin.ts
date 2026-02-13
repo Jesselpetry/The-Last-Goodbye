@@ -128,6 +128,7 @@ export async function createFriend(data: FriendFormData): Promise<Friend | null>
         content: data.content,
         image_urls: data.image_urls || [],
         spotify_url: data.spotify_url || null,
+        unlock_date: data.unlock_date || null,
       })
       .select()
       .single();
@@ -154,6 +155,7 @@ export async function updateFriend(id: string, data: Partial<FriendFormData>): P
 
     if (data.image_urls !== undefined) updateData.image_urls = data.image_urls;
     if (data.spotify_url !== undefined) updateData.spotify_url = data.spotify_url;
+    if (data.unlock_date !== undefined) updateData.unlock_date = data.unlock_date;
 
     const { data: friend, error } = await supabase
       .from('friends')

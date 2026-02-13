@@ -11,6 +11,8 @@ export interface Friend {
   image_urls: string[] | null; // New field
   spotify_url: string | null; // New field
   is_viewed: boolean;
+  unlock_date: string | null; // New field
+  updated_at?: string;
 }
 
 export interface VisitLog {
@@ -47,6 +49,7 @@ export interface FriendFormData {
   image_urls?: string[];
   spotify_url?: string;
   image_url?: string; // Deprecated
+  unlock_date?: string; // New field
 }
 
 // Status types for admin dashboard

@@ -5,15 +5,15 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import useEmblaCarousel from "embla-carousel-react";
 import ReactConfetti from "react-confetti";
-import { Mail, MailOpen, PenTool, Music, ChevronLeft, ChevronRight } from "lucide-react";
+import { Mail, MailOpen, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface LetterProps {
   name: string;
   content: string;
   imageUrls?: string[] | null;
   spotifyUrl?: string | null;
-  // Backward compatibility
-  imageUrl?: string | null;
+  imageUrl?: string | null; // Backward compatibility
+  timestamp?: string;
 }
 
 export default function Letter({
@@ -22,9 +22,11 @@ export default function Letter({
   imageUrls,
   spotifyUrl,
   imageUrl,
+  timestamp,
 }: LetterProps) {
   const [isOpened, setIsOpened] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+
   // Embla Carousel
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -56,6 +58,19 @@ export default function Letter({
 
   const scrollPrev = () => emblaApi && emblaApi.scrollPrev();
   const scrollNext = () => emblaApi && emblaApi.scrollNext();
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "";
+    try {
+      return new Date(dateString).toLocaleDateString('th-TH', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 overflow-hidden relative">
@@ -125,7 +140,7 @@ export default function Letter({
               <div className="w-16 h-0.5 bg-gray-300 mx-auto" />
             </motion.div>
 
-            {/* Image Carousel */}
+            {/* Polaroid Image Carousel */}
             {images.length > 0 && (
               <motion.div
                 initial={{ scale: 0, rotate: -5 }}
@@ -136,48 +151,51 @@ export default function Letter({
                   stiffness: 200,
                   damping: 15,
                 }}
-                className="mb-8 relative max-w-sm mx-auto"
+                className="mb-12 relative max-w-sm mx-auto"
               >
-                <div className="overflow-hidden rounded-xl shadow-lg border-[6px] border-white bg-gray-100 aspect-[4/3] sm:aspect-square" ref={emblaRef}>
-                  <div className="flex h-full">
-                    {images.map((img, index) => (
-                      <div className="flex-[0_0_100%] min-w-0 relative" key={index}>
-                        <Image
-                          src={img}
-                          alt={`Memory ${index + 1}`}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 100vw, 384px"
-                          priority={index === 0}
-                        />
-                      </div>
-                    ))}
+                {/* Polaroid Frame */}
+                <div className="bg-white p-3 pb-12 shadow-xl rotate-2 rounded-sm transform transition-transform hover:rotate-0 duration-500">
+                  <div className="overflow-hidden bg-gray-100 aspect-[4/3] sm:aspect-square relative" ref={emblaRef}>
+                    <div className="flex h-full">
+                      {images.map((img, index) => (
+                        <div className="flex-[0_0_100%] min-w-0 relative" key={index}>
+                          <Image
+                            src={img}
+                            alt={`Memory ${index + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 640px) 100vw, 384px"
+                            priority={index === 0}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                {/* Navigation Buttons */}
-                {images.length > 1 && (
-                  <>
-                    <button
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white disabled:opacity-50 transition-all"
-                      onClick={scrollPrev}
-                      disabled={!canScrollPrev}
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white disabled:opacity-50 transition-all"
-                      onClick={scrollNext}
-                      disabled={!canScrollNext}
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </>
-                )}
+                  {/* Navigation Buttons (Absolute to the image area) */}
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        className="absolute left-4 top-[40%] -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white disabled:opacity-50 transition-all z-10"
+                        onClick={scrollPrev}
+                        disabled={!canScrollPrev}
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        className="absolute right-4 top-[40%] -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md text-gray-800 hover:bg-white disabled:opacity-50 transition-all z-10"
+                        onClick={scrollNext}
+                        disabled={!canScrollNext}
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
               </motion.div>
             )}
 
-            {/* Letter Content */}
+            {/* Letter Content & Footer */}
             <motion.div
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -191,48 +209,48 @@ export default function Letter({
                 {content}
               </div>
 
-              {/* Signature */}
-              <div className="mt-16 pt-6 border-t border-gray-100 flex flex-col items-end text-right">
-                <div className="flex items-center gap-2 mb-1">
-                  <PenTool className="w-4 h-4 text-gray-400" />
-                  <p className="font-mali text-xl font-bold text-gray-800">
-                    จาก เจส
-                  </p>
+              {/* Combined Footer Section */}
+              <div className="mt-12 pt-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-end gap-6">
+
+                {/* Left: Spotify Embed */}
+                <div className="w-full md:w-1/2 order-2 md:order-1">
+                  {spotifyUrl && (
+                    <div className="w-full">
+                      <iframe
+                        style={{ borderRadius: "12px" }}
+                        src={spotifyUrl.replace("open.spotify.com", "open.spotify.com/embed")}
+                        width="100%"
+                        height="80"
+                        frameBorder="0"
+                        allowFullScreen
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                        loading="lazy"
+                      ></iframe>
+                    </div>
+                  )}
                 </div>
-                <p className="font-mali text-sm text-gray-400">
-                  (ฉัททัณฑ์ เพททริ)
-                </p>
+
+                {/* Right: Signature & Timestamp */}
+                <div className="w-full md:w-auto text-right order-1 md:order-2 shrink-0">
+                  <div className="flex flex-col items-end">
+                    <p className="font-mali text-xl font-bold text-gray-800">
+                      จาก เจส
+                    </p>
+                    <p className="font-mali text-sm text-gray-500 mb-2">
+                      (ฉัททัณฑ์ เพททริ)
+                    </p>
+                    {timestamp && (
+                      <p className="font-mali text-xs text-gray-400">
+                        อัปเดตเมื่อ: {formatDate(timestamp)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
               </div>
             </motion.div>
 
-            {/* Spotify Embed */}
-            {spotifyUrl && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.2 }}
-                className="mt-8 bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-50 flex items-center justify-center"
-              >
-                <div className="w-full flex flex-col gap-2">
-                  <div className="flex items-center gap-2 text-green-600 mb-2">
-                    <Music className="w-5 h-5" />
-                    <span className="font-mali font-bold text-sm">Song for you</span>
-                  </div>
-                  <iframe
-                    style={{ borderRadius: "12px" }}
-                    src={spotifyUrl.replace("open.spotify.com", "open.spotify.com/embed")}
-                    width="100%"
-                    height="152"
-                    frameBorder="0"
-                    allowFullScreen
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                  ></iframe>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Footer */}
+            {/* Bottom Tagline */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

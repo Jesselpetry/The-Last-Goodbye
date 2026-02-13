@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createFriend, updateFriend, deleteFriend, getFriendById } from '@/app/actions/admin';
 import { Friend, FriendFormData } from '@/lib/types';
-import { Plus, Trash2, Lock, User, FileText, Image as ImageIcon, Music, Edit, CheckCircle, X } from 'lucide-react';
+import { Plus, Trash2, Lock, User, FileText, Image as ImageIcon, Music, Edit, CheckCircle, X, Calendar, Share2, Download } from 'lucide-react';
+import ShareModal from './ShareModal';
 
 interface FriendFormProps {
   friend?: Friend | null;
@@ -13,6 +14,20 @@ interface FriendFormProps {
 }
 
 function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
+  // Helper to format date for input (YYYY-MM-DDThh:mm)
+  const toDateTimeLocal = (dateStr?: string | null) => {
+    if (!dateStr) return '2026-02-20T21:00'; // Default target
+    try {
+      const date = new Date(dateStr);
+      // Adjust for timezone offset to show correct local time in input
+      const offset = date.getTimezoneOffset() * 60000;
+      const localDate = new Date(date.getTime() - offset);
+      return localDate.toISOString().slice(0, 16);
+    } catch {
+      return '2026-02-20T21:00';
+    }
+  };
+
   const [formData, setFormData] = useState<FriendFormData>({
     name: friend?.name || '',
     slug: friend?.slug || '',
@@ -20,7 +35,10 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
     content: friend?.content || '',
     image_urls: friend?.image_urls || (friend?.image_url ? [friend.image_url] : []),
     spotify_url: friend?.spotify_url || '',
+    unlock_date: friend?.unlock_date || undefined,
   });
+
+  const [unlockDateInput, setUnlockDateInput] = useState(toDateTimeLocal(friend?.unlock_date));
   const [newImageUrl, setNewImageUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,10 +51,14 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
     setError('');
 
     try {
+      // Convert local input time to ISO string (UTC)
+      const isoUnlockDate = new Date(unlockDateInput).toISOString();
+      const submissionData = { ...formData, unlock_date: isoUnlockDate };
+
       if (isEdit) {
-        await updateFriend(friend.id, formData);
+        await updateFriend(friend.id, submissionData);
       } else {
-        await createFriend(formData);
+        await createFriend(submissionData);
       }
       onSuccess();
     } catch (err) {
@@ -119,6 +141,21 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
                 required
                 />
             </div>
+          </div>
+
+          <div>
+             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                <Calendar className="w-4 h-4" /> วันที่เปิดอ่านได้ (Unlock Date)
+             </label>
+             <input
+                type="datetime-local"
+                value={unlockDateInput}
+                onChange={(e) => setUnlockDateInput(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all"
+             />
+             <p className="text-xs text-gray-500 mt-1">
+                เพื่อนจะสามารถเปิดอ่านจดหมายได้หลังจากเวลานี้
+             </p>
           </div>
 
           <div>
@@ -255,6 +292,7 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingFriend, setEditingFriend] = useState<Friend | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [shareFriend, setShareFriend] = useState<Friend | null>(null);
 
   useEffect(() => {
     if (editId) {
@@ -267,9 +305,10 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
       };
       loadFriend();
     } else if (createMode) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setEditingFriend(null);
-        setShowForm(true);
+        setTimeout(() => {
+            setEditingFriend(null);
+            setShowForm(true);
+        }, 0);
     }
   }, [editId, createMode]);
 
@@ -299,6 +338,31 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
     setShowForm(true);
   };
 
+  const exportToCSV = () => {
+    const headers = ['Name', 'Slug', 'Passcode', 'Unlock Date', 'URL'];
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
+    const csvContent = [
+      headers.join(','),
+      ...friends.map(friend => [
+        `"${friend.name}"`,
+        `"${friend.slug}"`,
+        `"${friend.passcode}"`,
+        `"${friend.unlock_date || ''}"`,
+        `"${siteUrl}/${friend.slug}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `friends_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -306,15 +370,23 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
           <h1 className="text-2xl font-bold text-gray-900">จัดการเพื่อน</h1>
           <p className="text-gray-500">เพิ่ม แก้ไข หรือลบข้อมูลเพื่อน ({friends.length} คน)</p>
         </div>
-        <button
-          onClick={() => {
-              setEditingFriend(null);
-              setShowForm(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all shadow-md hover:shadow-lg"
-        >
-          <Plus className="w-5 h-5" /> เพิ่มเพื่อนใหม่
-        </button>
+        <div className="flex gap-2">
+            <button
+                onClick={exportToCSV}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm"
+            >
+                <Download className="w-5 h-5" /> Export CSV
+            </button>
+            <button
+            onClick={() => {
+                setEditingFriend(null);
+                setShowForm(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all shadow-md hover:shadow-lg"
+            >
+            <Plus className="w-5 h-5" /> เพิ่มเพื่อนใหม่
+            </button>
+        </div>
       </div>
 
       {/* Friends Grid */}
@@ -336,12 +408,21 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
                     <span className="bg-gray-50 px-2 py-0.5 rounded border border-gray-100">/{friend.slug}</span>
                   </div>
                 </div>
-                <span className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1 font-medium ${
-                  friend.is_viewed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {friend.is_viewed ? <CheckCircle className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                  {friend.is_viewed ? 'อ่านแล้ว' : 'ยังไม่เปิด'}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                    <span className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1 font-medium ${
+                    friend.is_viewed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                    {friend.is_viewed ? <CheckCircle className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                    {friend.is_viewed ? 'อ่านแล้ว' : 'ยังไม่เปิด'}
+                    </span>
+                    <button
+                        onClick={() => setShareFriend(friend)}
+                        className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Share / Print Card"
+                    >
+                        <Share2 className="w-5 h-5" />
+                    </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 text-sm text-gray-500 mb-6 bg-gray-50 p-2 rounded-lg">
@@ -392,6 +473,14 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
           friend={editingFriend}
           onClose={handleClose}
           onSuccess={handleSuccess}
+        />
+      )}
+
+      {/* Share Modal */}
+      {shareFriend && (
+        <ShareModal
+            friend={shareFriend}
+            onClose={() => setShareFriend(null)}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import Countdown from '@/components/Countdown';
 import PinPad from '@/components/PinPad';
 import Letter from '@/components/Letter';
@@ -14,11 +14,12 @@ interface FriendPageClientProps {
   friendImageUrls?: string[] | null;
   friendSpotifyUrl?: string | null;
   isAlreadyViewed: boolean;
+  unlockDate?: string | null;
+  timestamp?: string;
 }
 
-// Target date: Feb 20, 2026, 21:00 (GMT+7)
-// GMT+7 means 21:00 GMT+7 = 14:00 UTC
-const TARGET_DATE = new Date('2026-02-12T14:00:00Z');
+// Fallback target date: Feb 20, 2026, 21:00 (GMT+7) -> 14:00 UTC
+const DEFAULT_TARGET_DATE = new Date('2026-02-20T14:00:00Z');
 
 type Phase = 'countdown' | 'auth' | 'reveal';
 
@@ -30,18 +31,25 @@ export default function FriendPageClient({
   friendImageUrls,
   friendSpotifyUrl,
   isAlreadyViewed,
+  unlockDate,
+  timestamp,
 }: FriendPageClientProps) {
   const [phase, setPhase] = useState<Phase>('countdown');
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const targetDate = useMemo(() =>
+    unlockDate ? new Date(unlockDate) : DEFAULT_TARGET_DATE,
+    [unlockDate]
+  );
+
   // Check if countdown is complete on mount
   useEffect(() => {
     const now = new Date();
-    if (now >= TARGET_DATE) {
+    if (now >= targetDate) {
       setPhase('auth');
     }
-  }, []);
+  }, [targetDate]);
 
   const handleCountdownComplete = useCallback(() => {
     setPhase('auth');
@@ -75,7 +83,7 @@ export default function FriendPageClient({
     <div className="min-h-screen">
       {phase === 'countdown' && (
         <Countdown
-          targetDate={TARGET_DATE}
+          targetDate={targetDate}
           onComplete={handleCountdownComplete}
         />
       )}
@@ -97,6 +105,7 @@ export default function FriendPageClient({
           imageUrl={friendImageUrl}
           imageUrls={friendImageUrls}
           spotifyUrl={friendSpotifyUrl}
+          timestamp={timestamp}
         />
       )}
     </div>
