@@ -30,11 +30,13 @@ export default async function FriendPage({ params }: PageProps) {
   return (
     <FriendPageClient
       slug={slug}
+      friendId={friend.id}
       friendName={friend.name}
       friendContent={friend.content || ''}
       friendImageUrl={friend.image_url}
       friendImageUrls={friend.image_urls}
       friendSpotifyUrl={friend.spotify_url}
+      friendBgmUrl={friend.bgm_url}
       isAlreadyViewed={friend.is_viewed}
       unlockDate={friend.unlock_date}
       timestamp={friend.updated_at || friend.created_at}

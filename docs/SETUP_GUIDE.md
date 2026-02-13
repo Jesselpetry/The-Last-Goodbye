@@ -33,7 +33,11 @@ create table friends (
   name text not null,
   passcode text not null,
   content text,
-  image_url text,
+  image_url text, -- Deprecated, utilize image_urls array
+  image_urls text[], -- Array of image URLs
+  spotify_url text,
+  bgm_url text, -- Background Music URL
+  unlock_date timestamp with time zone default null,
   is_viewed boolean default false
 );
 
@@ -50,14 +54,27 @@ create table visit_logs (
   os text
 );
 
--- 3. Create indexes for better query performance
+-- 3. Replies Table (New Feature)
+create table replies (
+  id uuid default gen_random_uuid() primary key,
+  friend_id uuid references friends(id) on delete cascade,
+  content text not null,
+  sender_name text,
+  is_read boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 4. Create indexes for better query performance
 create index idx_friends_slug on friends(slug);
 create index idx_visit_logs_friend_id on visit_logs(friend_id);
 create index idx_visit_logs_visited_at on visit_logs(visited_at);
+create index idx_replies_friend_id on replies(friend_id);
+create index idx_replies_is_read on replies(is_read);
 
--- 4. Row Level Security (RLS)
+-- 5. Row Level Security (RLS)
 alter table friends enable row level security;
 alter table visit_logs enable row level security;
+alter table replies enable row level security;
 
 -- Public read access to friends table
 create policy "Public read friends by slug" on friends for select using (true);
@@ -76,6 +93,15 @@ create policy "Public insert friends" on friends for insert with check (true);
 
 -- Public delete of friends
 create policy "Public delete friends" on friends for delete using (true);
+
+-- Public insert replies
+create policy "Public insert replies" on replies for insert with check (true);
+
+-- Public read replies (for the friend page feed)
+create policy "Public read replies" on replies for select using (true);
+
+-- Public update replies (mark as read)
+create policy "Public update replies" on replies for update using (true);
 ```
 
 3. Click "Run" to execute the SQL
@@ -94,9 +120,11 @@ create policy "Public delete friends" on friends for delete using (true);
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+ADMIN_PIN=1234
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-2. Replace the values with your actual Supabase credentials
+2. Replace the values with your actual Supabase credentials and desired PIN.
 
 ## Step 5: Install Dependencies
 
@@ -112,27 +140,17 @@ npm run dev
 
 The application will be available at `http://localhost:3000`
 
-## Step 7: Add Your First Friend
+## Background Music Configuration
 
-1. Go to `http://localhost:3000/admin`
-2. Click "จัดการเพื่อน" (Manage Friends)
-3. Click "➕ เพิ่มเพื่อนใหม่" (Add New Friend)
-4. Fill in the form:
-   - Name: Friend's name
-   - Slug: URL-friendly identifier (e.g., "john-doe")
-   - Passcode: 4-digit PIN
-   - Content: Your farewell letter
+You can configure available background music in `lib/bgm-config.ts`.
+Simply add your MP3 files to the `public/bgm/` folder and update the config file:
 
-## Optional: Set Up Image Storage
-
-If you want to add photos to your letters:
-
-1. In Supabase, go to **Storage**
-2. Click "New bucket"
-3. Name it "memories"
-4. Check "Public bucket"
-5. Upload your images
-6. Copy the public URL and paste it in the image_url field when adding friends
+```typescript
+export const BGM_LIST = [
+  { id: 'bgm-1', name: 'Song Title', url: '/bgm/song.mp3' },
+  // ...
+];
+```
 
 ## Deployment
 
@@ -144,33 +162,6 @@ If you want to add photos to your letters:
 4. Add environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `ADMIN_PIN`
+   - `NEXT_PUBLIC_SITE_URL` (e.g. `https://your-domain.vercel.app`)
 5. Deploy!
-
-### Custom Domain
-
-1. In Vercel, go to your project settings
-2. Add your custom domain
-3. Update DNS records as instructed
-
-## Troubleshooting
-
-### "Missing Supabase environment variables" warning
-Make sure your `.env.local` file exists and contains valid credentials.
-
-### Database connection errors
-- Check that your Supabase project is active
-- Verify your API keys are correct
-- Make sure RLS policies are properly set up
-
-### Images not loading
-- Ensure the storage bucket is public
-- Check that the image URL is correct
-- Verify the storage policies allow public read access
-
-## Security Notes
-
-⚠️ **Important**: The current RLS policies are permissive for ease of development. For production use, consider:
-
-1. Adding authentication for admin routes
-2. Restricting update/delete operations to authenticated users
-3. Implementing rate limiting for visit logs

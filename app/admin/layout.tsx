@@ -1,14 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Activity, LogOut, Menu, X, Lock } from 'lucide-react';
+import { LayoutDashboard, Users, Activity, LogOut, Menu, X, Lock, Bell } from 'lucide-react';
 import { logoutAdmin } from '@/app/actions/admin';
+import { getUnreadRepliesCount } from '@/app/actions/replies';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        if (pathname === '/admin/login') return;
+
+        const fetchUnread = async () => {
+            const count = await getUnreadRepliesCount();
+            setUnreadCount(count);
+        };
+        fetchUnread();
+
+        // Optional: Poll every 30 seconds
+        const interval = setInterval(fetchUnread, 30000);
+        return () => clearInterval(interval);
+    }, [pathname]);
 
     // If login page, don't show sidebar
     if (pathname === '/admin/login') {
@@ -18,6 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const menuItems = [
         { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
         { name: 'จัดการเพื่อน', href: '/admin/friends', icon: Users },
+        { name: 'ข้อความตอบกลับ', href: '/admin/notifications', icon: Bell, badge: unreadCount },
         { name: 'Spy Mode', href: '/admin/analytics', icon: Activity },
     ];
 
@@ -29,6 +46,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             >
                 {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white" />
+                )}
             </button>
 
             {/* Sidebar */}
@@ -57,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 <Link
                                     key={item.href}
                                     href={item.href}
-                                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group ${
+                                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group relative ${
                                         isActive
                                             ? 'bg-gray-900 text-white shadow-md transform scale-[1.02]'
                                             : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
@@ -66,6 +86,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 >
                                     <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-900'}`} />
                                     <span className="font-medium">{item.name}</span>
+                                    {item.badge !== undefined && item.badge > 0 && (
+                                        <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full ${
+                                            isActive ? 'bg-red-500 text-white' : 'bg-red-100 text-red-600'
+                                        }`}>
+                                            {item.badge}
+                                        </span>
+                                    )}
                                 </Link>
                             );
                         })}

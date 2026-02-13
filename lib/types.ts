@@ -10,9 +10,19 @@ export interface Friend {
   image_url?: string | null; // Deprecated, use image_urls
   image_urls: string[] | null; // New field
   spotify_url: string | null; // New field
+  bgm_url?: string | null; // New field
   is_viewed: boolean;
   unlock_date: string | null; // New field
   updated_at?: string;
+}
+
+export interface Reply {
+  id: string;
+  friend_id: string;
+  content: string;
+  sender_name?: string | null;
+  is_read: boolean;
+  created_at: string;
 }
 
 export interface VisitLog {
@@ -36,6 +46,14 @@ export interface VisitLogWithFriend extends VisitLog {
   } | null;
 }
 
+export interface ReplyWithFriend extends Reply {
+  friends: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+}
+
 export interface FriendWithLogs extends Friend {
   visit_logs: VisitLog[];
 }
@@ -48,6 +66,7 @@ export interface FriendFormData {
   content: string;
   image_urls?: string[];
   spotify_url?: string;
+  bgm_url?: string; // New field
   image_url?: string; // Deprecated
   unlock_date?: string; // New field
 }

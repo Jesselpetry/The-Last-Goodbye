@@ -8,11 +8,13 @@ import { verifyPasscode, markAsViewed } from '@/app/actions/tracking';
 
 interface FriendPageClientProps {
   slug: string;
+  friendId?: string;
   friendName: string;
   friendContent: string;
   friendImageUrl?: string | null;
   friendImageUrls?: string[] | null;
   friendSpotifyUrl?: string | null;
+  friendBgmUrl?: string | null;
   isAlreadyViewed: boolean;
   unlockDate?: string | null;
   timestamp?: string;
@@ -25,11 +27,13 @@ type Phase = 'countdown' | 'auth' | 'reveal';
 
 export default function FriendPageClient({
   slug,
+  friendId,
   friendName,
   friendContent,
   friendImageUrl,
   friendImageUrls,
   friendSpotifyUrl,
+  friendBgmUrl,
   isAlreadyViewed,
   unlockDate,
   timestamp,
@@ -100,11 +104,13 @@ export default function FriendPageClient({
       
       {phase === 'reveal' && (
         <Letter
+          friendId={friendId}
           name={friendName}
           content={friendContent || 'ยังไม่มีเนื้อหาจดหมาย'}
           imageUrl={friendImageUrl}
           imageUrls={friendImageUrls}
           spotifyUrl={friendSpotifyUrl}
+          bgmUrl={friendBgmUrl}
           timestamp={timestamp}
         />
       )}

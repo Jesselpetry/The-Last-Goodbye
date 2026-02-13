@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createFriend, updateFriend, deleteFriend, getFriendById } from '@/app/actions/admin';
 import { Friend, FriendFormData } from '@/lib/types';
-import { Plus, Trash2, Lock, User, FileText, Image as ImageIcon, Music, Edit, CheckCircle, X, Calendar, Share2, Download } from 'lucide-react';
+import { Plus, Trash2, Lock, User, FileText, Image as ImageIcon, Music, Edit, CheckCircle, X, Calendar, Share2, Download, Eye } from 'lucide-react';
 import ShareModal from './ShareModal';
+import { BGM_LIST } from '@/lib/bgm-config';
+import LetterPreviewModal from '@/components/LetterPreviewModal';
 
 interface FriendFormProps {
   friend?: Friend | null;
@@ -35,9 +37,11 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
     content: friend?.content || '',
     image_urls: friend?.image_urls || (friend?.image_url ? [friend.image_url] : []),
     spotify_url: friend?.spotify_url || '',
+    bgm_url: friend?.bgm_url || '',
     unlock_date: friend?.unlock_date || undefined,
   });
 
+  const [showPreview, setShowPreview] = useState(false);
   const [unlockDateInput, setUnlockDateInput] = useState(toDateTimeLocal(friend?.unlock_date));
   const [newImageUrl, setNewImageUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -97,10 +101,19 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            {isEdit ? <Edit className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-            {isEdit ? 'แก้ไขข้อมูลเพื่อน' : 'เพิ่มเพื่อนใหม่'}
-          </h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                {isEdit ? <Edit className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                {isEdit ? 'แก้ไขข้อมูลเพื่อน' : 'เพิ่มเพื่อนใหม่'}
+            </h2>
+            <button
+                type="button"
+                onClick={() => setShowPreview(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition-colors border border-gray-200"
+            >
+                <Eye className="w-4 h-4" /> Live Preview
+            </button>
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="w-6 h-6" />
           </button>
@@ -245,6 +258,26 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                <Music className="w-4 h-4" /> Background Music
+            </label>
+            <select
+                value={BGM_LIST.find(b => b.url === formData.bgm_url)?.id || 'none'}
+                onChange={(e) => {
+                    const selected = BGM_LIST.find(b => b.id === e.target.value);
+                    setFormData({ ...formData, bgm_url: selected?.url || '' });
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all appearance-none bg-white"
+            >
+                {BGM_LIST.map((bgm) => (
+                    <option key={bgm.id} value={bgm.id}>
+                        {bgm.name}
+                    </option>
+                ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                 <FileText className="w-4 h-4" /> เนื้อหาจดหมาย
             </label>
             <textarea
@@ -274,6 +307,14 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
           </div>
         </form>
       </div>
+
+      {showPreview && (
+        <LetterPreviewModal
+            isOpen={showPreview}
+            onClose={() => setShowPreview(false)}
+            data={formData}
+        />
+      )}
     </div>
   );
 }
