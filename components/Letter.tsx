@@ -495,7 +495,7 @@ export default function Letter({
             {/* Show only if friendId is present (Preview mode might pass undefined, but we can still show UI) */}
             <motion.div
               variants={childVariants}
-              className="mt-8 bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-md border border-gray-100"
+              className="mt-8 bg-white backdrop-blur-md rounded-xl p-6 shadow-md border border-gray-100"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.3, ...smoothSpringConfig }}
