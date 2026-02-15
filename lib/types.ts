@@ -22,6 +22,7 @@ export interface Reply {
   content: string;
   sender_name?: string | null;
   is_read: boolean;
+  is_private: boolean;
   created_at: string;
 }
 

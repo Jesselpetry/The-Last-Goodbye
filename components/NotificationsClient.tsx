@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ReplyWithFriend } from '@/lib/types';
 import { markReplyAsRead } from '@/app/actions/replies';
-import { CheckCircle, MessageSquare, User, Clock, Check } from 'lucide-react';
+import { Mail, MailOpen, User, Lock, Globe, Clock, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
 interface NotificationsClientProps {
@@ -12,121 +12,160 @@ interface NotificationsClientProps {
 
 export default function NotificationsClient({ initialReplies }: NotificationsClientProps) {
   const [replies, setReplies] = useState<ReplyWithFriend[]>(initialReplies);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'private' | 'public'>('all');
 
   const handleMarkAsRead = async (id: string) => {
-    setLoadingId(id);
-    const success = await markReplyAsRead(id);
-    if (success) {
-      setReplies(prev => prev.map(r => r.id === id ? { ...r, is_read: true } : r));
-    }
-    setLoadingId(null);
+    // Optimistic update
+    setReplies(replies.map(r => r.id === id ? { ...r, is_read: true } : r));
+    await markReplyAsRead(id);
   };
 
+  const filteredReplies = replies.filter(reply => {
+    if (filter === 'private') return reply.is_private;
+    if (filter === 'public') return !reply.is_private;
+    return true;
+  });
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('th-TH', {
-      year: '2-digit',
-      month: 'short',
+    return new Date(dateString).toLocaleDateString('th-TH', {
       day: 'numeric',
+      month: 'short',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     });
   };
 
-  const unreadCount = replies.filter(r => !r.is_read).length;
-
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <MessageSquare className="w-8 h-8 text-gray-900" />
-            ข้อความตอบกลับ
-          </h1>
-          <p className="text-gray-500 mt-1">
-            ทั้งหมด {replies.length} ข้อความ ({unreadCount} ยังไม่อ่าน)
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">ข้อความตอบกลับ</h1>
+          <p className="text-gray-500">จัดการข้อความทั้งหมดจากเพื่อนๆ ({replies.length})</p>
+        </div>
+
+        <div className="flex bg-white p-1 rounded-xl border border-gray-200 shadow-sm w-fit">
+            <button
+                onClick={() => setFilter('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    filter === 'all'
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+            >
+                ทั้งหมด
+            </button>
+            <button
+                onClick={() => setFilter('public')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                    filter === 'public'
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+            >
+                <Globe className="w-4 h-4" /> สาธารณะ
+            </button>
+            <button
+                onClick={() => setFilter('private')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                    filter === 'private'
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+            >
+                <Lock className="w-4 h-4" /> ส่วนตัว
+            </button>
         </div>
       </div>
 
-      {replies.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center text-gray-500 flex flex-col items-center gap-4">
-          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
-            <MessageSquare className="w-8 h-8 text-gray-300" />
-          </div>
-          <p>ยังไม่มีข้อความตอบกลับจากเพื่อนๆ</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {replies.map((reply) => (
-            <div
-              key={reply.id}
-              className={`bg-white rounded-2xl p-6 transition-all border ${
-                reply.is_read ? 'border-gray-100 shadow-sm' : 'border-blue-100 shadow-md ring-1 ring-blue-50'
-              }`}
-            >
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Avatar / Icon */}
-                <div className="flex-shrink-0">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    reply.is_read ? 'bg-gray-100 text-gray-400' : 'bg-blue-100 text-blue-600'
-                  }`}>
-                    <User className="w-6 h-6" />
-                  </div>
+      <div className="space-y-4">
+        {filteredReplies.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center text-gray-500 flex flex-col items-center gap-4">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
+                    <Mail className="w-8 h-8 text-gray-300" />
                 </div>
-
-                {/* Content */}
-                <div className="flex-1 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-gray-900 text-lg">
-                        {reply.sender_name || reply.friends?.name || 'ไม่ระบุชื่อ'}
-                      </h3>
-                      <span className="text-sm text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                         ถึง: {reply.friends?.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <Clock className="w-3.5 h-3.5" />
-                      {formatDate(reply.created_at)}
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-gray-700 font-mali leading-relaxed whitespace-pre-wrap">
-                    {reply.content}
-                  </div>
-
-                  <div className="flex items-center justify-end gap-3 pt-2">
-                     <Link
-                        href={`/admin/friends?edit=${reply.friend_id}`}
-                        className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
-                     >
-                        ดูข้อมูลเพื่อน
-                     </Link>
-                     {!reply.is_read ? (
-                        <button
-                          onClick={() => handleMarkAsRead(reply.id)}
-                          disabled={loadingId === reply.id}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-70"
-                        >
-                          {loadingId === reply.id ? 'Loading...' : (
-                             <>
-                               <Check className="w-4 h-4" /> ทำเครื่องหมายว่าอ่านแล้ว
-                             </>
-                          )}
-                        </button>
-                     ) : (
-                        <span className="flex items-center gap-1 text-sm text-green-600 font-medium px-3 py-1 bg-green-50 rounded-lg">
-                           <CheckCircle className="w-4 h-4" /> อ่านแล้ว
-                        </span>
-                     )}
-                  </div>
-                </div>
-              </div>
+                <p>ไม่มีข้อความในหมวดหมู่นี้</p>
             </div>
-          ))}
-        </div>
-      )}
+        ) : (
+            filteredReplies.map((reply) => (
+                <div
+                    key={reply.id}
+                    className={`bg-white rounded-xl border p-6 transition-all hover:shadow-md ${
+                        !reply.is_read ? 'border-blue-200 shadow-sm ring-1 ring-blue-50' : 'border-gray-100 shadow-sm'
+                    }`}
+                >
+                    <div className="flex flex-col md:flex-row gap-6">
+                        {/* Meta Info */}
+                        <div className="md:w-64 flex-shrink-0 space-y-3">
+                             <div className="flex items-center gap-2">
+                                <span className={`px-2 py-1 text-xs font-bold rounded-md border flex items-center gap-1 w-fit ${
+                                    reply.is_private
+                                    ? 'bg-gray-900 text-white border-gray-900'
+                                    : 'bg-white text-gray-600 border-gray-200'
+                                }`}>
+                                    {reply.is_private ? <Lock className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                                    {reply.is_private ? 'PRIVATE' : 'PUBLIC'}
+                                </span>
+                                {!reply.is_read && (
+                                    <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                                        <Mail className="w-3 h-3" /> NEW
+                                    </span>
+                                )}
+                             </div>
+
+                             <div>
+                                <h3 className="text-sm font-medium text-gray-500 mb-1 flex items-center gap-1">
+                                    <User className="w-3.5 h-3.5" /> ผู้ส่ง
+                                </h3>
+                                <p className="font-bold text-gray-900 truncate">
+                                    {reply.sender_name || 'ไม่ระบุชื่อ'}
+                                </p>
+                             </div>
+
+                             <div>
+                                <h3 className="text-sm font-medium text-gray-500 mb-1 flex items-center gap-1">
+                                    <MailOpen className="w-3.5 h-3.5" /> จากหน้า
+                                </h3>
+                                {reply.friends ? (
+                                    <Link
+                                        href={`/admin/friends?edit=${reply.friends.id}`}
+                                        className="text-blue-600 hover:underline text-sm font-medium truncate block"
+                                    >
+                                        {reply.friends.name}
+                                    </Link>
+                                ) : (
+                                    <span className="text-gray-400 text-sm italic">Unknown Page</span>
+                                )}
+                             </div>
+
+                             <div className="text-xs text-gray-400 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatDate(reply.created_at)}
+                             </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-100 relative group">
+                            <p className="whitespace-pre-wrap text-gray-700 font-mali leading-relaxed">
+                                {reply.content}
+                            </p>
+
+                            {!reply.is_read && (
+                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => handleMarkAsRead(reply.id)}
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 shadow-sm rounded-lg text-xs font-medium text-gray-600 hover:text-blue-600 hover:border-blue-200 transition-colors"
+                                    >
+                                        <CheckCircle className="w-3 h-3" /> Mark as Read
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ))
+        )}
+      </div>
     </div>
   );
 }

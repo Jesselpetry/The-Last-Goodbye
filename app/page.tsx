@@ -1,8 +1,11 @@
 import Link from "next/link";
 import Letter from "@/components/Letter";
 import { Lock } from "lucide-react";
+import { getFriendBySlug } from "@/app/actions/tracking";
 
-export default function Home() {
+export default async function Home() {
+  const friend = await getFriendBySlug('home');
+
   // ข้อความ Archive สรุปความทรงจำ 3 ปี (เจสสามารถแก้ไขปรับแต่งได้ตามต้องการ)
   const archiveContent = `1,095 วันที่ปทุมเทพวิทยาคาร... เวลาผ่านไปไวเหมือนโกหกเลยเนอะ
 
@@ -19,20 +22,34 @@ export default function Home() {
     "/ptk-memory-1.jpg",
     "/ptk-memory-1.jpg",
     "/ptk-memory-1.jpg",
-
   ];
+
+  const name = friend ? friend.name : "ทุกคนที่แวะเข้ามา";
+  const content = friend ? (friend.content || archiveContent) : archiveContent;
+
+  let imageUrls = archiveImages;
+  if (friend) {
+    if (friend.image_urls && friend.image_urls.length > 0) {
+      imageUrls = friend.image_urls;
+    } else if (friend.image_url) {
+      imageUrls = [friend.image_url];
+    }
+  }
+
+  const timestamp = friend ? (friend.unlock_date || friend.updated_at || friend.created_at) : "2026-03-31T00:00:00Z";
 
   return (
     <div className="relative min-h-screen">
       
       {/* เรียกใช้ Letter Component ให้ฟีลลิ่งเดียวกับเพื่อนๆ ที่ได้รับจดหมาย */}
       <Letter
-        name="ทุกคนที่แวะเข้ามา"
-        content={archiveContent}
-        imageUrls={archiveImages.length > 0 ? archiveImages : null}
-        // สามารถใส่เพลง BGM ประจำหน้าแรกได้ (ถ้าอยากใช้ระบบ Spotify ที่มีอยู่เดิม)
-        // spotifyUrl="https://open.spotify.com/embed/track/..." 
-        timestamp="2026-03-31T00:00:00Z" // ใช้วันจบการศึกษาเป็นกิมมิค
+        friendId={friend?.id}
+        name={name}
+        content={content}
+        imageUrls={imageUrls.length > 0 ? imageUrls : null}
+        spotifyUrl={friend?.spotify_url}
+        bgmUrl={friend?.bgm_url}
+        timestamp={timestamp} // ใช้วันจบการศึกษาเป็นกิมมิค หรือใช้วัน unlock
       />
       
     </div>
