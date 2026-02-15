@@ -7,7 +7,8 @@ import { Reply, ReplyWithFriend } from '@/lib/types';
 export async function createReply(
   friendId: string,
   content: string,
-  senderName?: string
+  senderName?: string,
+  isPrivate: boolean = false
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { error } = await supabase
@@ -17,6 +18,7 @@ export async function createReply(
         content: content,
         sender_name: senderName || null,
         is_read: false,
+        is_private: isPrivate,
       });
 
     if (error) {
@@ -37,6 +39,7 @@ export async function getReplies(friendId: string): Promise<Reply[]> {
       .from('replies')
       .select('*')
       .eq('friend_id', friendId)
+      .eq('is_private', false) // Only fetch public replies
       .order('created_at', { ascending: false });
 
     if (error) throw error;

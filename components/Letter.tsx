@@ -44,6 +44,7 @@ export default function Letter({
   // --- REPLY SYSTEM STATES ---
   const [replyContent, setReplyContent] = useState("");
   const [senderName, setSenderName] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState(false);
@@ -158,21 +159,25 @@ export default function Letter({
     if (!replyContent.trim() || !friendId) return;
     setIsSending(true);
 
-    const res = await createReply(friendId, replyContent, senderName || undefined);
+    const res = await createReply(friendId, replyContent, senderName || undefined, isPrivate);
 
     if (res.success) {
         setSendSuccess(true);
         setReplyContent("");
+        setIsPrivate(false);
         // Optimistic update
-        const newReply: Reply = {
-            id: 'temp-' + Date.now(),
-            friend_id: friendId,
-            content: replyContent,
-            sender_name: senderName || null,
-            is_read: false,
-            created_at: new Date().toISOString()
-        };
-        setReplies([newReply, ...replies]);
+        if (!isPrivate) {
+            const newReply: Reply = {
+                id: 'temp-' + Date.now(),
+                friend_id: friendId,
+                content: replyContent,
+                sender_name: senderName || null,
+                is_read: false,
+                is_private: false,
+                created_at: new Date().toISOString()
+            };
+            setReplies([newReply, ...replies]);
+        }
 
         setTimeout(() => setSendSuccess(false), 3000);
     } else {
@@ -529,6 +534,20 @@ export default function Letter({
                             className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 outline-none font-mali h-32 bg-white/50 resize-none"
                         />
                       </div>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="isPrivate"
+                            checked={isPrivate}
+                            onChange={(e) => setIsPrivate(e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-gray-800 focus:ring-gray-800"
+                        />
+                        <label htmlFor="isPrivate" className="text-sm text-gray-600 font-mali cursor-pointer select-none">
+                            ส่งเป็นข้อความส่วนตัว (ไม่แสดงหน้าเว็บ)
+                        </label>
+                      </div>
+
                       <button
                         onClick={handleSendReply}
                         disabled={isSending || !replyContent.trim()}

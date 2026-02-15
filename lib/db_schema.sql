@@ -10,7 +10,11 @@ create table friends (
   passcode text not null,
   content text,
   image_url text,
-  is_viewed boolean default false
+  image_urls text[] default '{}',
+  spotify_url text,
+  bgm_url text,
+  is_viewed boolean default false,
+  unlock_date timestamp with time zone
 );
 
 -- 2. Visit Logs (The Spy Table)
@@ -26,21 +30,34 @@ create table visit_logs (
   os text              -- e.g., 'iOS 17.2', 'Android 14'
 );
 
--- 3. Create indexes for better query performance
+-- 3. Replies Table
+create table replies (
+  id uuid default gen_random_uuid() primary key,
+  friend_id uuid references friends(id) on delete cascade,
+  content text not null,
+  sender_name text,
+  is_read boolean default false,
+  is_private boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 4. Create indexes for better query performance
 create index idx_friends_slug on friends(slug);
 create index idx_visit_logs_friend_id on visit_logs(friend_id);
 create index idx_visit_logs_visited_at on visit_logs(visited_at);
+create index idx_replies_friend_id on replies(friend_id);
 
--- 4. Storage bucket for memories/images
+-- 5. Storage bucket for memories/images
 insert into storage.buckets (id, name, public) values ('memories', 'memories', true);
 
--- 5. Storage policies
+-- 6. Storage policies
 create policy "Public Access" on storage.objects for select using ( bucket_id = 'memories' );
 create policy "Admin Upload" on storage.objects for insert using ( bucket_id = 'memories' );
 
--- 6. Row Level Security (RLS) for tables
+-- 7. Row Level Security (RLS) for tables
 alter table friends enable row level security;
 alter table visit_logs enable row level security;
+alter table replies enable row level security;
 
 -- ⚠️ SECURITY NOTE: The following policies are PERMISSIVE for development/personal use.
 -- For production deployment, implement proper authentication and restrict these policies
@@ -64,3 +81,14 @@ create policy "Public insert friends" on friends for insert with check (true);
 
 -- Allow public delete of friends (for admin deleting - in production, restrict this)
 create policy "Public delete friends" on friends for delete using (true);
+
+-- Allow public insert of replies (for sending messages)
+create policy "Public insert replies" on replies for insert with check (true);
+
+-- Allow public read of replies (for showing messages on friend page)
+-- IMPORTANT: This should be restricted to filter out private messages in production logic,
+-- but RLS here is just enabling access. We handle filtering in the application layer or via view.
+create policy "Public read replies" on replies for select using (true);
+
+-- Allow public update of replies (for admin marking as read)
+create policy "Public update replies" on replies for update using (true);
