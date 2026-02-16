@@ -8,6 +8,7 @@ import { Plus, Trash2, Lock, User, FileText, Image as ImageIcon, Music, Edit, Ch
 import ShareModal from './ShareModal';
 import { BGM_LIST } from '@/lib/bgm-config';
 import LetterPreviewModal from '@/components/LetterPreviewModal';
+import RichTextEditor from '@/components/RichTextEditor';
 
 interface FriendFormProps {
   friend?: Friend | null;
@@ -278,13 +279,11 @@ function FriendForm({ friend, onClose, onSuccess }: FriendFormProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                <FileText className="w-4 h-4" /> เนื้อหาจดหมาย
+                <FileText className="w-4 h-4" /> เนื้อหาจดหมาย (Rich Text / Markdown)
             </label>
-            <textarea
+            <RichTextEditor
               value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent font-mali outline-none transition-all"
-              rows={8}
+              onChange={(value) => setFormData({ ...formData, content: value })}
               placeholder="เขียนจดหมายของคุณที่นี่..."
             />
           </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactConfetti from "react-confetti";
+import ReactMarkdown from "react-markdown";
 import { Mail, MailOpen, Volume2, VolumeX, Music, Send, User, MessageSquare, Check } from "lucide-react";
 import { createReply, getReplies } from "@/app/actions/replies";
 import { Reply } from "@/lib/types";
@@ -434,13 +435,25 @@ export default function Letter({
               className="bg-white/95 backdrop-blur-sm rounded-xl p-6 md:p-10 shadow-md border border-gray-100 relative mt-4"
             >
               <motion.div 
-                className="font-mali text-lg md:text-xl leading-loose text-gray-700 whitespace-pre-wrap" 
-                style={{ lineHeight: "2.2" }}
+                className="font-mali text-lg md:text-xl text-gray-700"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1.5, delay: 0.3 }}
               >
-                {content}
+                <ReactMarkdown
+                  components={{
+                    p: ({node, ...props}) => <p className="mb-4 leading-loose" style={{ lineHeight: "2.2" }} {...props} />,
+                    h1: ({node, ...props}) => <h1 className="text-2xl md:text-3xl font-bold mb-4 mt-8 text-gray-800" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="text-xl md:text-2xl font-bold mb-3 mt-6 text-gray-800" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-lg md:text-xl font-bold mb-2 mt-4 text-gray-800" {...props} />,
+                    ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-500 my-4" {...props} />,
+                    strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+                  }}
+                >
+                  {content}
+                </ReactMarkdown>
               </motion.div>
 
               <motion.div 
