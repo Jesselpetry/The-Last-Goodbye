@@ -73,11 +73,11 @@ export default function Countdown({ targetDate, onComplete, recipientName }: Cou
       <div className="flex flex-col items-center max-w-4xl w-full">
         {/* ส่วนหัวแสดงชื่อและข้อความ */}
         <div className="text-center mb-10 md:mb-14 space-y-2">
-          <h1 className="text-2xl md:text-4xl font-mali font-bold text-gray-800 drop-shadow-sm">
-            จดหมายถึง {recipientName} 💌
-          </h1>
+          <div className="text-2xl md:text-4xl font-mali font-bold text-gray-800 drop-shadow-sm">
+              <h1>จดหมายถึง {recipientName}</h1>
+          </div>
           <p className="text-lg md:text-2xl font-mali text-gray-600 animate-pulse">
-            ⏳ จะเปิดอ่านได้ในอีก...
+            จะเปิดอ่านได้ในอีก...
           </p>
         </div>
         
