@@ -73,9 +73,11 @@ export default function Countdown({ targetDate, onComplete, recipientName }: Cou
       <div className="flex flex-col items-center max-w-4xl w-full">
         {/* ส่วนหัวแสดงชื่อและข้อความ */}
         <div className="text-center mb-10 md:mb-14 space-y-2">
-          <div className="text-2xl md:text-4xl font-mali font-bold text-gray-800 drop-shadow-sm">
-              <h1>จดหมายถึง {recipientName}</h1>
-          </div>
+            <div className="text-2xl md:text-4xl font-bold text-gray-800 drop-shadow-sm" style={{ fontFamily: "'IBM Plex Sans Thai', sans-serif" }}>
+              <h1>
+              จดหมายถึง <span className="font-mali">{recipientName}</span>
+              </h1>
+            </div>
           <p className="text-lg md:text-2xl font-mali text-gray-600 animate-pulse">
             จะเปิดอ่านได้ในอีก...
           </p>
@@ -92,7 +94,7 @@ export default function Countdown({ targetDate, onComplete, recipientName }: Cou
         {/* วันที่เป้าหมาย */}
         <div className="mt-12 bg-white/90 backdrop-blur px-8 py-4 rounded-full border border-gray-200 shadow-md">
           <p className="text-sm md:text-lg font-mali text-gray-500 text-center">
-            เจอกันวันที่: <span className="text-gray-800 font-bold">{formattedDate} น.</span>
+            <span className="text-gray-800 font-bold">{formattedDate} น.</span>
           </p>
         </div>
       </div>
