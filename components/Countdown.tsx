@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CountdownProps {
   targetDate: Date;
   onComplete: () => void;
+  recipientName: string; // เพิ่ม Prop รับชื่อเพื่อน
 }
 
 interface TimeLeft {
@@ -29,12 +31,15 @@ const calculateTimeLeft = (targetDate: Date): TimeLeft => {
   };
 };
 
-export default function Countdown({ targetDate, onComplete }: CountdownProps) {
-  const initialTimeLeft = useMemo(() => calculateTimeLeft(targetDate), [targetDate]);
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>(initialTimeLeft);
+export default function Countdown({ targetDate, onComplete, recipientName }: CountdownProps) {
+  const [isClient, setIsClient] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+    setTimeLeft(calculateTimeLeft(targetDate));
+
     const timer = setInterval(() => {
       const newTimeLeft = calculateTimeLeft(targetDate);
       setTimeLeft(newTimeLeft);
@@ -50,22 +55,48 @@ export default function Countdown({ targetDate, onComplete }: CountdownProps) {
     return () => clearInterval(timer);
   }, [targetDate, onComplete]);
 
-  if (isComplete) return null;
+  const formattedDate = new Intl.DateTimeFormat('th-TH', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false,
+  }).format(targetDate);
+
+  if (!isClient || isComplete) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      <h1 className="text-2xl md:text-3xl font-light text-gray-600 mb-8 text-center">
-        จดหมายนี้จะเปิดเมื่อ...
-      </h1>
-      <div className="flex gap-4 md:gap-8">
-        <TimeBlock value={timeLeft.days} label="วัน" />
-        <TimeBlock value={timeLeft.hours} label="ชั่วโมง" />
-        <TimeBlock value={timeLeft.minutes} label="นาที" />
-        <TimeBlock value={timeLeft.seconds} label="วินาที" />
+    // จัดกลางหน้าจอเป๊ะๆ
+    <div className="flex flex-col items-center justify-center min-h-screen w-full p-4 md:p-8 fixed inset-0 z-50">
+      
+      <div className="flex flex-col items-center max-w-4xl w-full">
+        {/* ส่วนหัวแสดงชื่อและข้อความ */}
+        <div className="text-center mb-10 md:mb-14 space-y-2">
+          <h1 className="text-2xl md:text-4xl font-mali font-bold text-gray-800 drop-shadow-sm">
+            จดหมายถึง {recipientName} 💌
+          </h1>
+          <p className="text-lg md:text-2xl font-mali text-gray-600 animate-pulse">
+            ⏳ จะเปิดอ่านได้ในอีก...
+          </p>
+        </div>
+        
+        {/* Grid ของเวลานับถอยหลัง */}
+        <div className="grid grid-cols-4 gap-3 md:gap-8 w-full max-w-lg md:max-w-2xl px-2">
+          <TimeBlock value={timeLeft.days} label="วัน" />
+          <TimeBlock value={timeLeft.hours} label="ชั่วโมง" />
+          <TimeBlock value={timeLeft.minutes} label="นาที" />
+          <TimeBlock value={timeLeft.seconds} label="วินาที" />
+        </div>
+
+        {/* วันที่เป้าหมาย */}
+        <div className="mt-12 bg-white/90 backdrop-blur px-8 py-4 rounded-full border border-gray-200 shadow-md">
+          <p className="text-sm md:text-lg font-mali text-gray-500 text-center">
+            เจอกันวันที่: <span className="text-gray-800 font-bold">{formattedDate} น.</span>
+          </p>
+        </div>
       </div>
-      <p className="mt-8 text-sm text-gray-400">
-        20 กุมภาพันธ์ 2026 เวลา 21:00 น.
-      </p>
+
     </div>
   );
 }
@@ -73,12 +104,21 @@ export default function Countdown({ targetDate, onComplete }: CountdownProps) {
 function TimeBlock({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="bg-white shadow-lg rounded-lg p-4 md:p-6 min-w-[70px] md:min-w-[100px]">
-        <span className="text-3xl md:text-5xl font-mono font-bold text-gray-800">
-          {value.toString().padStart(2, '0')}
-        </span>
+      <div className="relative bg-white shadow-lg border-b-4 border-gray-300 rounded-2xl w-full aspect-square flex items-center justify-center overflow-hidden mb-3 transition-transform hover:scale-105 duration-300">
+        <AnimatePresence mode="popLayout">
+          <motion.span
+            key={value}
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-gray-800 font-mono absolute"
+          >
+            {value.toString().padStart(2, '0')}
+          </motion.span>
+        </AnimatePresence>
       </div>
-      <span className="mt-2 text-xs md:text-sm text-gray-500">{label}</span>
+      <motion.span className="text-xs md:text-lg font-mali text-gray-700 font-medium">{label}</motion.span>
     </div>
   );
 }
