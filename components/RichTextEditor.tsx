@@ -79,6 +79,7 @@ export default function RichTextEditor({
   // However, for this simple case, we'll sync only when needed.
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: {
