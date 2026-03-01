@@ -9,6 +9,14 @@ interface VisitData {
   userAgent: string;
 }
 
+/**
+ * Logs a user visit for a specific friend's letter by their slug.
+ * It parses the User Agent to gather analytics data like device type,
+ * browser (including in-app browsers like LINE/IG), and OS.
+ * This is the core function of the "Advanced Analytics (Spy) System".
+ *
+ * @param data - The visit data containing slug, IP address, and User Agent string.
+ */
 export async function logVisit(data: VisitData): Promise<void> {
   try {
     // Parse User Agent
@@ -65,6 +73,14 @@ export async function logVisit(data: VisitData): Promise<void> {
   }
 }
 
+/**
+ * Verifies if the provided passcode matches the friend's actual passcode.
+ * This acts as the authentication layer before a user can unlock and read their letter.
+ *
+ * @param slug - The friend's unique URL identifier.
+ * @param passcode - The 4-digit PIN provided by the user.
+ * @returns True if the passcode is correct, false otherwise.
+ */
 export async function verifyPasscode(slug: string, passcode: string): Promise<boolean> {
   try {
     const { data: friend } = await supabase
@@ -80,6 +96,12 @@ export async function verifyPasscode(slug: string, passcode: string): Promise<bo
   }
 }
 
+/**
+ * Updates the friend's status to 'viewed' once they successfully open the letter.
+ * This updates the database so the admin knows the letter has been read.
+ *
+ * @param slug - The friend's unique URL identifier.
+ */
 export async function markAsViewed(slug: string): Promise<void> {
   try {
     await supabase
@@ -91,6 +113,14 @@ export async function markAsViewed(slug: string): Promise<void> {
   }
 }
 
+/**
+ * Fetches a friend's details from the database using their unique slug.
+ * This dynamically loads the necessary data (name, passcode, unlock date, etc.)
+ * for the Letter component to render.
+ *
+ * @param slug - The unique URL identifier for the friend.
+ * @returns The friend's data object, or null if an error occurs or the friend doesn't exist.
+ */
 export async function getFriendBySlug(slug: string) {
   try {
     const { data: friend, error } = await supabase

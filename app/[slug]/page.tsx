@@ -7,6 +7,10 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+/**
+ * Server-rendered page for displaying a friend's letter dynamically via their slug.
+ * It fetches the friend's data via Supabase and asynchronously logs the visit.
+ */
 export default async function FriendPage({ params }: PageProps) {
   const { slug } = await params;
   

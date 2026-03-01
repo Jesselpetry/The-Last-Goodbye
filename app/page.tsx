@@ -1,6 +1,4 @@
-import Link from "next/link";
 import Letter from "@/components/Letter";
-import { Lock } from "lucide-react";
 import { getFriendBySlug } from "@/app/actions/tracking";
 
 export const dynamic = 'force-dynamic';

@@ -40,7 +40,6 @@ export default function Letter({
   // --- AUDIO SYSTEM STATES ---
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isMuted, setIsMuted] = useState(false); // Default unmuted if user interacts, but browsers block it.
-  const [hasInteracted, setHasInteracted] = useState(isPreview); // In preview, we assume interaction/skip
 
   // --- REPLY SYSTEM STATES ---
   const [replyContent, setReplyContent] = useState("");
@@ -114,12 +113,18 @@ export default function Letter({
   }, [friendId, isPreview]);
 
   // --- AUDIO EFFECT ---
+  /**
+   * Handles autoplay for Background Music (BGM) when the letter is opened.
+   * Browsers restrict autoplaying audio unless the user has interacted with the document.
+   * We catch the error if autoplay is blocked, and fall back to setting `isMuted` to true,
+   * allowing the user to manually click the speaker icon to play the music.
+   */
   useEffect(() => {
     if (bgmUrl && audioRef.current) {
         audioRef.current.volume = 0.5;
         if (isOpened && !isMuted && !isPreview) {
             audioRef.current.play().catch(() => {
-                // Autoplay blocked
+                // Autoplay blocked by browser policy
                 setIsMuted(true);
             });
         }
@@ -442,14 +447,14 @@ export default function Letter({
               >
                 <ReactMarkdown
                   components={{
-                    p: ({node, ...props}) => <p className="mb-4 leading-loose" style={{ lineHeight: "2.2" }} {...props} />,
-                    h1: ({node, ...props}) => <h1 className="text-2xl md:text-3xl font-bold mb-4 mt-8 text-gray-800" {...props} />,
-                    h2: ({node, ...props}) => <h2 className="text-xl md:text-2xl font-bold mb-3 mt-6 text-gray-800" {...props} />,
-                    h3: ({node, ...props}) => <h3 className="text-lg md:text-xl font-bold mb-2 mt-4 text-gray-800" {...props} />,
-                    ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
-                    ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
-                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-500 my-4" {...props} />,
-                    strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+                    p: ({...props}) => <p className="mb-4 leading-loose" style={{ lineHeight: "2.2" }} {...props} />,
+                    h1: ({...props}) => <h1 className="text-2xl md:text-3xl font-bold mb-4 mt-8 text-gray-800" {...props} />,
+                    h2: ({...props}) => <h2 className="text-xl md:text-2xl font-bold mb-3 mt-6 text-gray-800" {...props} />,
+                    h3: ({...props}) => <h3 className="text-lg md:text-xl font-bold mb-2 mt-4 text-gray-800" {...props} />,
+                    ul: ({...props}) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+                    ol: ({...props}) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+                    blockquote: ({...props}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-500 my-4" {...props} />,
+                    strong: ({...props}) => <strong className="font-bold text-gray-900" {...props} />,
                   }}
                 >
                   {content}

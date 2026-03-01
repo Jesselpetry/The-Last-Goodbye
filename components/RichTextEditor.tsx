@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { marked } from "marked";
 import TurndownService from "turndown";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
