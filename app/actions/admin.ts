@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Friend, FriendFormData, FriendWithStatus, VisitLog, VisitLogWithFriend } from '@/lib/types';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 
 // Verify Admin PIN
 export async function verifyAdmin(pin: string) {
@@ -135,6 +136,10 @@ export async function createFriend(data: FriendFormData): Promise<Friend | null>
       .single();
     
     if (error) throw error;
+
+    revalidatePath('/admin/friends');
+    revalidatePath('/');
+
     return friend;
   } catch (error) {
     console.error('Error creating friend:', error);
@@ -167,6 +172,11 @@ export async function updateFriend(id: string, data: Partial<FriendFormData>): P
       .single();
     
     if (error) throw error;
+
+    revalidatePath('/admin/friends');
+    revalidatePath(`/${friend.slug}`);
+    revalidatePath('/');
+
     return friend;
   } catch (error) {
     console.error('Error updating friend:', error);
@@ -183,6 +193,10 @@ export async function deleteFriend(id: string): Promise<boolean> {
       .eq('id', id);
     
     if (error) throw error;
+
+    revalidatePath('/admin/friends');
+    revalidatePath('/');
+
     return true;
   } catch (error) {
     console.error('Error deleting friend:', error);

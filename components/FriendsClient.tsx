@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createFriend, updateFriend, deleteFriend, getFriendById } from '@/app/actions/admin';
 import { Friend, FriendFormData } from '@/lib/types';
@@ -328,11 +328,19 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
   const editId = searchParams.get('edit');
   const createMode = searchParams.get('create');
 
+  const [isPending, startTransition] = useTransition();
+
   const [friends, setFriends] = useState(initialFriends);
   const [showForm, setShowForm] = useState(false);
   const [editingFriend, setEditingFriend] = useState<Friend | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [shareFriend, setShareFriend] = useState<Friend | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  // Update local state when props change
+  useEffect(() => {
+    setFriends(initialFriends);
+  }, [initialFriends]);
 
   useEffect(() => {
     if (editId) {
@@ -355,21 +363,32 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
   const handleSuccess = () => {
     setShowForm(false);
     setEditingFriend(null);
-    router.push('/admin/friends');
-    router.refresh();
+    startTransition(() => {
+      router.push('/admin/friends');
+      router.refresh();
+    });
   };
 
   const handleClose = () => {
     setShowForm(false);
     setEditingFriend(null);
-    router.push('/admin/friends');
+    startTransition(() => {
+        router.push('/admin/friends');
+    });
   };
 
   const handleDelete = async (id: string) => {
-    const success = await deleteFriend(id);
-    if (success) {
-      setFriends(friends.filter(f => f.id !== id));
-      setDeleteConfirm(null);
+    setIsDeleting(id);
+    try {
+        const success = await deleteFriend(id);
+        if (success) {
+            setDeleteConfirm(null);
+            startTransition(() => {
+                router.refresh();
+            });
+        }
+    } finally {
+        setIsDeleting(null);
     }
   };
 
@@ -482,13 +501,15 @@ export default function FriendsClient({ initialFriends }: FriendsClientProps) {
                   <div className="flex gap-2 flex-1">
                     <button
                       onClick={() => handleDelete(friend.id)}
-                      className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all"
+                      disabled={isDeleting === friend.id || isPending}
+                      className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 transition-all flex items-center justify-center gap-1"
                     >
-                      ยืนยัน
+                      {isDeleting === friend.id ? 'กำลังลบ...' : 'ยืนยัน'}
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(null)}
-                      className="px-3 py-2 text-sm border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50"
+                      disabled={isDeleting === friend.id}
+                      className="px-3 py-2 text-sm border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-50"
                     >
                       ยกเลิก
                     </button>

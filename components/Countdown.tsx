@@ -33,26 +33,47 @@ const calculateTimeLeft = (targetDate: Date): TimeLeft => {
 
 export default function Countdown({ targetDate, onComplete, recipientName }: CountdownProps) {
   const [isClient, setIsClient] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>(() => calculateTimeLeft(targetDate));
   const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-    setTimeLeft(calculateTimeLeft(targetDate));
+    // Only set on client mount to avoid hydration mismatch
+    let isMounted = true;
+    if (isMounted) {
+      setTimeout(() => {
+        if (isMounted) setIsClient(true);
+      }, 0);
+    }
 
-    const timer = setInterval(() => {
-      const newTimeLeft = calculateTimeLeft(targetDate);
-      setTimeLeft(newTimeLeft);
-      
+    const checkCompletion = () => {
       const difference = targetDate.getTime() - new Date().getTime();
       if (difference <= 0) {
         setIsComplete(true);
         onComplete();
+        return true;
+      }
+      return false;
+    };
+
+    if (checkCompletion()) {
+      return () => { isMounted = false; };
+    }
+
+    const timer = setInterval(() => {
+      if (!isMounted) return;
+
+      const newTimeLeft = calculateTimeLeft(targetDate);
+      setTimeLeft(newTimeLeft);
+
+      if (checkCompletion()) {
         clearInterval(timer);
       }
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
   }, [targetDate, onComplete]);
 
   const formattedDate = new Intl.DateTimeFormat('th-TH', {
