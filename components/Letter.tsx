@@ -135,7 +135,6 @@ export default function Letter({
   const handleOpen = () => {
     setIsOpened(true);
     setShowConfetti(true);
-    setHasInteracted(true);
     
     if (audioRef.current && bgmUrl && !isMuted) {
       audioRef.current.play().catch(err => {
